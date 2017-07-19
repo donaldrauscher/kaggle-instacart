@@ -41,7 +41,7 @@ for user in users:
     up_recommendations_i = model.predictAll(up_potential_pairs).map(lambda p: (str(p[0]), str(p[1]), float(p[2])))
     up_recommendations_i = up_recommendations_i.takeOrdered(100, key=lambda x: -x[2])
     if (up_recommendations == None):
-        up_recommendations = predictions
+        up_recommendations = up_recommendations_i
     else:
         up_recommendations.extend(up_recommendations_i)
 
