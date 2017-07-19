@@ -34,7 +34,7 @@ up_recommendations = None
 for user in users:
     up_combo_i = [i[1] for i in up_combo if i[0] == user]
     up_potential = [i for i in products if i not in up_combo_i]
-    up_potential_pairs = up_potential.map(lambda x: (i, x[0]))
+    up_potential_pairs = sc.parallelize(up_potential).map(lambda x: (i, x[0]))
     up_recommendations_i = model.predictAll(up_potential_pairs).map(lambda p: (str(p[0]), str(p[1]), float(p[2])))
     up_recommendations_i = up_recommendations_i.takeOrdered(100, key=lambda x: -x[2])
     if (up_recommendations == None):
