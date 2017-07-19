@@ -13,16 +13,19 @@ cf_up_matrix = sc.textFile("gs://kaggle-instacart-172517/pyspark/cf_up_matrix.cs
 # extract header
 header = cf_up_matrix.first() #extract header
 cf_up_matrix = cf_up_matrix.filter(lambda row: row != header)
+cf_up_matrix = cf_up_matrix.map(lambda l: l.split(','))
 
 # extract ratings
-cf_up_matrix_ratings = cf_up_matrix.\
-    map(lambda l: l.split(',')).\
-    map(lambda l: Rating(int(l[0]), int(l[1]), float(l[2])))
+cf_up_matrix_ratings = cf_up_matrix.map(lambda l: Rating(int(l[0]), int(l[1]), float(l[2])))
 
 # recommendations
-rank = 20
-iterations = 20
-model = ALS.train(cf_up_matrix_ratings, rank, iterations)
+params = {
+    'rank' : 20,
+    'iterations' : 20,
+    'alpha' : 0.01,
+    'lambda_' : 0.01
+}
+model = ALS.trainImplicit(cf_up_matrix_ratings, **params)
 
 # create a list of users and current combo
 users = cf_up_matrix.map(lambda x: x[0]).distinct().collect()
