@@ -14,6 +14,16 @@ bq query --use_legacy_sql=false --destination_table=instacart.cf_up_matrix "
     SELECT user_id, RAND() AS random FROM instacart.orders GROUP BY 1 HAVING random < 0.05
   ) AS sample ON orders.user_id = sample.user_id
   INNER JOIN instacart.order_products__prior AS op ON orders.order_id = op.order_id
+  INNER JOIN (
+    SELECT product_id FROM (
+      SELECT product_id, n_orders,
+        SUM(n_orders) OVER (ORDER BY n_orders DESC ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS n_orders_cumulative,
+        (SELECT COUNT(*) FROM instacart.order_products__prior) AS n_orders_total
+      FROM (
+        SELECT product_id, COUNT(*) AS n_orders FROM instacart.order_products__prior GROUP BY 1
+      ) AS x
+    ) AS x WHERE n_orders_cumulative / n_orders_total < 0.95
+  ) AS top_products ON op.product_id = top_products.product_id
   GROUP BY 1,2"
 
 # export to gs
