@@ -1,10 +1,11 @@
 from __future__ import print_function
+from pyspark.rdd import RDD
 from pyspark import SparkContext, SparkConf
 from pyspark.mllib.recommendation import ALS, MatrixFactorizationModel, Rating
 from subprocess import call
-import math, csv
+import math, csv, heapq
 
-conf = SparkConf().setAppName("train_model")
+conf = SparkConf().setAppName("cf_model")
 sc = SparkContext(conf=conf)
 sc.setCheckpointDir('checkpoint/') # checkpointing helps prevent stack overflow errors
 
@@ -35,18 +36,39 @@ up_combo_full = users.cartesian(products)
 
 # filter out existing combos
 print("Filtering out existing combos...")
-up_combo_existing = sc.broadcast(cf_up_matrix.map(lambda x: (x[0], x[1])).groupByKey().mapValues(list).collectAsMap())
+up_combo_existing = sc.broadcast(cf_up_matrix.map(lambda x: (x[0], [x[1]])).reduceByKey(lambda a,b: a + b).collectAsMap())
 up_combo_potential = up_combo_full.filter(lambda x: x[1] not in up_combo_existing.value.get(x[0]))
 
 # generate predictions
 print("Generating predictions...")
 up_rec = model.predictAll(up_combo_potential)
 
-# take top 100 for each user
+# take top 100 for each user; use custom 'ByKey' RDD function
+def takeOrderedByKey(self, num, sortKey = None):
+
+    def init(a):
+        a = [(sortKey(a), a)]
+        heapq.heapify(a)
+        return a
+
+    def combine(agg, a):
+        heapq.heappush(agg, a if type(a) == tuple else (sortKey(a), a))
+        if len(agg) > num:
+            heapq.heappop(agg)
+        return agg
+
+    def merge(agg1, agg2):
+        for i in agg2:
+            agg1 = combine(agg1, i)
+        return agg1
+
+    return self.combineByKey(init, combine, merge)
+
+RDD.takeOrderedByKey = takeOrderedByKey
+
 print("Isolating top 100 products for each user...")
-up_rec = up_rec.map(lambda x: (x[0], (x[1], x[2]))).groupByKey().mapValues(list)
-up_rec_top = up_rec.map(lambda x: (x[0], sorted(x[1], key = lambda pair: -pair[1])[0:100]))
-up_rec_top = up_rec_top.flatMapValues(lambda x: x).map(lambda x: (x[0], x[1][0], x[1][1]))
+up_rec_top = up_rec.map(lambda x: (x[0], x)).takeOrderedByKey(100, sortKey = lambda x: x[2])
+up_rec_top = up_rec_top.flatMapValues(lambda x: x).map(lambda x: x[1][1])
 
 # save
 print("Exporting...")
