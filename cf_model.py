@@ -11,7 +11,7 @@ sc.setCheckpointDir('checkpoint/') # checkpointing helps prevent stack overflow 
 
 # pull in data
 data_dir = "gs://kaggle-instacart-172517/pyspark/"
-cf_up_matrix = sc.textFile(data_dir + "cf_up_matrix.csv")
+cf_up_matrix = sc.textFile(data_dir + "cf_up_matrix.csv", 30)
 
 # extract header
 header = cf_up_matrix.first() #extract header
@@ -32,7 +32,7 @@ print("Making all user-product combinations...")
 users = cf_up_matrix.map(lambda x: x[0]).distinct()
 products = cf_up_matrix.map(lambda x: x[1]).distinct().cache()
 print(products.take(5)) # saves on every node
-up_combo_full = users.cartesian(products)
+up_combo_full = users.cartesian(products).coalesce(30)
 
 # filter out existing combos
 print("Filtering out existing combos...")
@@ -42,6 +42,11 @@ up_combo_potential = up_combo_full.filter(lambda x: x[1] not in up_combo_existin
 # generate predictions
 print("Generating predictions...")
 up_rec = model.predictAll(up_combo_potential)
+
+# take top 100 for each user
+#print("Isolating top 100 products for each user...")
+#up_rec_top = up_rec.map(lambda x: (x[0], (x[1], x[2]))).groupByKey().mapValues(lambda x: [i for i in sorted(x, key = lambda k: -k[1])][:100])
+#up_rec_top = up_rec_top.flatMapValues(lambda x: x).map(lambda x: (x[0], x[1][0], x[1][1]))
 
 # take top 100 for each user; use custom 'ByKey' RDD function
 def takeOrderedByKey(self, num, sortKey = None):
