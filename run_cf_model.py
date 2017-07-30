@@ -5,6 +5,7 @@ from google.cloud import storage
 
 REGION = 'global' # Currently only the "global" region is supported?
 FILENAME = 'cf_model.py'
+NUM_PARTITIONS = 35
 
 # some useful functions
 def load_yaml(filename):
@@ -90,7 +91,7 @@ def download_pyspark_output(project_id, cluster_name, job_id, out_filename):
     print('Done.')
 
 # submits a pyspark job
-def submit_pyspark_job(dataproc, project_id, cluster_name, pyspark_filepath):
+def submit_pyspark_job(dataproc, project_id, cluster_name, pyspark_filepath, pyspark_args = []):
     job_details = {
         'projectId': project_id,
         'job': {
@@ -98,7 +99,8 @@ def submit_pyspark_job(dataproc, project_id, cluster_name, pyspark_filepath):
                 'clusterName': cluster_name
             },
             'pysparkJob': {
-                'mainPythonFileUri': pyspark_filepath
+                'mainPythonFileUri': pyspark_filepath,
+                'args': pyspark_args
             }
         }
     }
@@ -145,7 +147,8 @@ if __name__ == '__main__':
 
         # kick off job
         pyspark_filepath_full = config['pyspark_filepath'] + '/' + FILENAME
-        job_id = submit_pyspark_job(dataproc, project_id, cluster_name, pyspark_filepath_full)
+        pyspark_args = [str(NUM_PARTITIONS), config['pyspark_filepath']]
+        job_id = submit_pyspark_job(dataproc, project_id, cluster_name, pyspark_filepath_full, pyspark_args)
         wait_for_job(dataproc, project_id, job_id)
 
         # download output

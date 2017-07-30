@@ -3,15 +3,17 @@ from pyspark.rdd import RDD
 from pyspark import SparkContext, SparkConf
 from pyspark.mllib.recommendation import ALS, MatrixFactorizationModel, Rating
 from subprocess import call
-import math, csv, heapq
+import math, csv, heapq, sys
 
 conf = SparkConf().setAppName("cf_model")
 sc = SparkContext(conf=conf)
 sc.setCheckpointDir('checkpoint/') # checkpointing helps prevent stack overflow errors
 
 # pull in data
-data_dir = "gs://kaggle-instacart-172517/pyspark/"
-cf_up_matrix = sc.textFile(data_dir + "cf_up_matrix.csv", 30)
+num_partitions = int(sys.argv[1])
+data_dir = sys.argv[2]
+data_dir = data_dir + '/' if data_dir[-1] != '/' else ''
+cf_up_matrix = sc.textFile(data_dir + "/cf_up_matrix.csv", num_partitions)
 
 # extract header
 header = cf_up_matrix.first() #extract header
@@ -32,7 +34,7 @@ print("Making all user-product combinations...")
 users = cf_up_matrix.map(lambda x: x[0]).distinct()
 products = cf_up_matrix.map(lambda x: x[1]).distinct().cache()
 print(products.take(5)) # saves on every node
-up_combo_full = users.cartesian(products).coalesce(30)
+up_combo_full = users.cartesian(products).coalesce(num_partitions)
 
 # filter out existing combos
 print("Filtering out existing combos...")
