@@ -11,7 +11,7 @@ bq query --use_legacy_sql=false --destination_table=instacart.cf_up_matrix "
     FROM instacart.orders
   ) AS orders
   INNER JOIN (
-    SELECT user_id, RAND() AS random FROM instacart.orders GROUP BY 1 HAVING random < 0.05
+    SELECT user_id, RAND() AS random FROM instacart.orders GROUP BY 1 HAVING random <= 1 
   ) AS sample ON orders.user_id = sample.user_id
   INNER JOIN instacart.order_products__prior AS op ON orders.order_id = op.order_id
   INNER JOIN (
