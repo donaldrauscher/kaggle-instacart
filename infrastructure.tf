@@ -14,6 +14,12 @@ provider "google" {
   region = "${var.region}"
 }
 
+resource "google_storage_bucket" "instacart-data" {
+  name = "instacart-data"
+  storage_class = "REGIONAL"
+  location = "${var.region}"
+}
+
 resource "google_storage_bucket" "instacart-dataproc-staging" {
   name = "instacart-dataproc-staging"
   storage_class = "REGIONAL"
@@ -61,4 +67,8 @@ resource "google_dataproc_cluster" "instacart-dataproc" {
     }
 
   }
+}
+
+resource "google_bigquery_dataset" "instacart" {
+  dataset_id = "instacart"
 }
