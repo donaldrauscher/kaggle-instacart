@@ -50,19 +50,21 @@ resource "google_dataproc_cluster" "instacart-dataproc" {
       }
     }
 
-    # TODO: figure out how to take in multiple packages; ':' separator doesn't work!
     gce_cluster_config {
       zone = "${var.zone}"
 
 			metadata {
         JUPYTER_CONDA_CHANNELS = "conda-forge"
-				JUPYTER_CONDA_PACKAGES = "pandas"
+				JUPYTER_CONDA_PACKAGES = "pandas:google-cloud-bigquery:scikit-learn"
         JUPYTER_PORT = 8123
 			}
     }
 
     initialization_action {
-      script = "gs://dataproc-initialization-actions/jupyter/jupyter.sh"
+      # NOTE: should be able to use 'gs://dataproc-initialization-actions/jupyter/jupyter.sh'!
+      # Waiting for this (https://github.com/GoogleCloudPlatform/dataproc-initialization-actions/issues/234) to be resolved
+      # In meantime, used my own fork with the fix
+      script = "gs://instacart-dataproc-staging/jupyter/jupyter.sh"
       timeout_sec = 600
     }
 
