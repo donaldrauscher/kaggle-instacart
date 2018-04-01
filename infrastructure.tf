@@ -35,15 +35,15 @@ resource "google_dataproc_cluster" "instacart-dataproc" {
 
     master_config {
       num_instances = 1
-      machine_type = "n1-standard-1"
+      machine_type = "n1-standard-2"
       disk_config {
         boot_disk_size_gb = 10
       }
     }
 
     worker_config {
-      num_instances = 2
-      machine_type = "n1-standard-1"
+      num_instances = 4
+      machine_type = "n1-standard-2"
       disk_config {
         boot_disk_size_gb = 10
         num_local_ssds = 1
