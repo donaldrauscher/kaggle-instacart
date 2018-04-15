@@ -64,7 +64,7 @@ resource "google_dataproc_cluster" "instacart-dataproc" {
 
 			metadata {
         JUPYTER_CONDA_CHANNELS = "conda-forge"
-				JUPYTER_CONDA_PACKAGES = "pandas:google-cloud-bigquery:scikit-learn"
+				JUPYTER_CONDA_PACKAGES = "pandas:google-cloud-bigquery:google-cloud-storage:scikit-learn"
         JUPYTER_PORT = 8123
 			}
     }
