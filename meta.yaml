@@ -1,4 +1,0 @@
-bq_dataset: "instacart"
-prop_users: 1
-prop_products: 0.95
-num_partitions: 500
