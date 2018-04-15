@@ -43,12 +43,21 @@ resource "google_dataproc_cluster" "instacart-dataproc" {
 
     worker_config {
       num_instances = 3
-      machine_type = "n1-standard-2"
+      machine_type = "n1-standard-8"
       disk_config {
         boot_disk_size_gb = 10
         num_local_ssds = 1
       }
     }
+
+    #software_config {
+    #  override_properties {
+    #    "spark:spark.executor.cores" = "2"
+    #    "spark:spark.executor.memory" = "7g"
+    #    "spark:spark.network.timeout" = "2000"
+    #    "spark:spark.shuffle.io.maxRetries" = "10"
+    #  }
+    #}
 
     gce_cluster_config {
       zone = "${var.zone}"
