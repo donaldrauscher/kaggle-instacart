@@ -42,7 +42,7 @@ resource "google_dataproc_cluster" "instacart-dataproc" {
     }
 
     worker_config {
-      num_instances = 3
+      num_instances = 2
       machine_type = "n1-standard-8"
       disk_config {
         boot_disk_size_gb = 10
